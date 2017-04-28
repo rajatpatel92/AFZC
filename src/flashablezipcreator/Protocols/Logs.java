@@ -6,13 +6,9 @@
 package flashablezipcreator.Protocols;
 
 import flashablezipcreator.DiskOperations.Write;
-import flashablezipcreator.Operations.JarOperations;
 import flashablezipcreator.UserInterface.Preferences;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 
 /**
  *
@@ -24,7 +20,7 @@ public class Logs {
     public static String newLine = "\n";
 
     public static void write(String strToWrite) {
-        if (Preferences.saveLogs) {
+        if (Preferences.pp.saveLogs) {
             Write w = new Write();
             w.appendStringToFile(strToWrite + newLine, logFile);
         }

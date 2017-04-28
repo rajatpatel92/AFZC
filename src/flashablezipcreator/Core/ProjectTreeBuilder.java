@@ -5,8 +5,7 @@
  */
 package flashablezipcreator.Core;
 
-import static flashablezipcreator.MyTree.model;
-import static flashablezipcreator.MyTree.tree;
+import flashablezipcreator.Protocols.Types;
 import java.awt.Font;
 import java.io.IOException;
 import javax.swing.tree.DefaultTreeModel;
@@ -22,12 +21,15 @@ public class ProjectTreeBuilder {
     public static ProjectItemNode rootNode;
 
     public static javax.swing.JTree buildTree() throws IOException {
-        rootNode = new ProjectItemNode("AFZC Projects", ProjectItemNode.NODE_ROOT);
+        rootNode = new ProjectItemNode("AFZC Projects", Types.NODE_ROOT);
+        rootNode.prop.path = "AFZC Projects";
+        rootNode.prop.zipPath = "customize";
         tree = new javax.swing.JTree(rootNode);
         tree.setCellRenderer(new NodeRenderer());
         tree.setDragEnabled(true);
         tree.setEditable(true);
         tree.setInvokesStopCellEditing(true);
+        tree.setSelectionRow(0);
         tree.setShowsRootHandles(true);
         tree.setTransferHandler(new MyTransferHandler(rootNode, (DefaultTreeModel) ProjectTreeBuilder.tree.getModel()));
         Font currentFont = tree.getFont();

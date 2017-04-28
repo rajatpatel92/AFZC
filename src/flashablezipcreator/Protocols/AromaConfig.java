@@ -10,6 +10,7 @@ import flashablezipcreator.Core.ProjectItemNode;
 import flashablezipcreator.Core.ProjectNode;
 import flashablezipcreator.Operations.AromaScriptOperations;
 import flashablezipcreator.Operations.TreeOperations;
+import flashablezipcreator.UserInterface.Preferences;
 
 /**
  *
@@ -25,24 +26,23 @@ public class AromaConfig {
     public static String build(ProjectItemNode rootNode) {
         aromaConfig = "";
         to = new TreeOperations();
+        if (!Preferences.pp.aromaVersion.equals("Version 2.56 - EDELWEIS")) {
+            aromaConfig += "ini_set(\"force_colorspace\", \"rgba\");\n\n";
+        }
         aromaConfig += op.addSplashString();
         aromaConfig += op.addFontsString();
         aromaConfig += op.addThemesString(rootNode);
         aromaConfig += op.addAgreeBox();
         for (ProjectItemNode project : to.getProjectsSorted(rootNode)) {
-            if (((ProjectNode) project).createZip) {
-                switch (((ProjectNode) project).projectType) {
-//                    case ProjectNode.PROJECT_ROM:
-//                        aromaConfig += buildAdvancedScript((ProjectNode) project);
-//                        break;
-//                    case ProjectNode.PROJECT_GAPPS:
-//                        aromaConfig += buildAdvancedScript((ProjectNode) project);
-//                        break;
-                    case ProjectNode.PROJECT_AROMA:
+            if (((ProjectNode) project).prop.createZip) {
+                switch (((ProjectNode) project).prop.projectType) {
+                    case Types.PROJECT_AROMA:
+                    case Types.PROJECT_CUSTOM:
+                    case Types.PROJECT_MOD:
                         aromaConfig += buildAromaScript((ProjectNode) project);
                         break;
                     //following is not needed. added just in case.
-//                    case ProjectNode.PROJECT_ADVANCED:
+//                    case Types.PROJECT_ADVANCED:
 //                        break;
                 }
             }
@@ -59,54 +59,23 @@ public class AromaConfig {
     public static String buildAromaScript(ProjectNode project) {
         String str = "";
         str += op.addMenuBox(project);
-        str += "if prop(\"" + project.title + ".prop\",\"selected\")==\"1\" then\n";
+        str += "if prop(\"" + project.prop.title + ".prop\",\"selected\")==\"1\" then\n";
         str += op.addInitString(project);
         str += op.addWelcomeString(project);
-        for (ProjectItemNode group : to.getNodeList(ProjectItemNode.NODE_GROUP)) {
-            if (((ProjectNode) group.parent).projectType == ProjectNode.PROJECT_AROMA) {
-                str += op.addCheckBox((GroupNode) group);
-                str += op.addSelectBox((GroupNode) group);
+        for (ProjectItemNode group : project.prop.children) {
+            switch (((ProjectNode) group.prop.parent).prop.projectType) {
+                case Types.PROJECT_AROMA:
+                case Types.PROJECT_CUSTOM:
+                case Types.PROJECT_MOD:
+                    str += op.addCheckBox((GroupNode) group);
+                    str += op.addSelectBox((GroupNode) group);
+                    break;
             }
         }
         str += "endif;\n";
-        str += "if prop(\"" + project.title + ".prop\",\"selected\")==\"2\" then\n";
-        str += "writetmpfile(\"" + project.title + ".prop\",\"init=no\\n\");\n";
+        str += "if prop(\"" + project.prop.title + ".prop\",\"selected\")==\"2\" then\n";
+        str += "writetmpfile(\"" + project.prop.title + ".prop\",\"init=no\\n\");\n";
         str += "endif;\n";
         return str;
     }
-
-//    public static String buildAdvancedScript(ProjectNode project) {
-//        String str = "";
-//        switch (project.projectType) {
-//            case ProjectNode.PROJECT_ROM:
-//                str += op.addMenuBox(project);
-//                str += "if prop(\"" + project.title + ".prop\",\"selected\")==\"1\" then\n";
-//                break;
-//            case ProjectNode.PROJECT_GAPPS:
-//                str += op.addMenuBox(project);
-//                str += "if prop(\"" + project.title + ".prop\",\"selected\")==\"1\" then\n";
-//                break;
-//        }
-//        str += op.addInitString(project);
-//        str += op.addWelcomeString(project);
-//        for (ProjectItemNode group : to.getNodeList(ProjectItemNode.NODE_GROUP)) {
-//            if (((ProjectNode) group.parent).projectType == project.projectType
-//                    && ((ProjectNode) group.parent).title.equals(project.title)) {
-//                str += op.addCheckBox((GroupNode) group);
-//                str += op.addSelectBox((GroupNode) group);
-//            }
-//        }
-//        str += "endif;\n";
-//        switch (project.projectType) {
-//            case ProjectNode.PROJECT_ROM:
-//                str += "if prop(\"" + project.title + ".prop\",\"selected\")==\"2\" then\n";
-//                break;
-//            case ProjectNode.PROJECT_GAPPS:
-//                str += "if prop(\"" + project.title + ".prop\",\"selected\")==\"2\" then\n";
-//                break;
-//        }
-//        str += "writetmpfile(\"" + project.title + ".prop\",\"init=no\\n\");\n";
-//        str += "endif;\n";
-//        return str;
-//    }
 }

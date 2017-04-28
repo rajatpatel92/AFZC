@@ -17,73 +17,11 @@ import javax.swing.JOptionPane;
  * @author Nikhil
  */
 public class Device {
-
-    static Read r = new Read();
-    //public static String selected = null;
-    public static String selected = "Redmi Note 3 (kenzo)";//"Samsung Galaxy R (i9103)";
-    public static final int CodeName = 1;
-    public static final int NeonCompatibility = 2;
-    public static final int MountPoint = 3;
-    public static ArrayList<String> deviceList = new ArrayList<>();
-    public static ArrayList<String> deviceBlackList = new ArrayList<>();//list of device without mountpoint
-    public static ArrayList<String> deviceWhiteList = new ArrayList<>();//list of device with mountpoint
     public static byte[] binary = null;
-    public static String codeName = null;
-    //public static boolean binaryType;
-    public static String mountPoint = null;
-
-    //needs to be executed after loading Device
-    public static void setSelectedDevice(String device) {
-        selected = device;
-    }
-
-    //needs to be executed at the start of the program
-    public static void loadDeviceList() {
-        for (String list : JarOperations.supported_devices.split("\n")) {
-            deviceList.add(list);
-        }
-    }
-
-    public static int getSelectedDeviceIndex() {
-        int index = 0;
-        Collections.sort(deviceList);
-        for (String deviceName : deviceList) {
-            if (deviceName.contains(Device.selected)) {
-                return index;
-            }
-            index++;
-        }
-        return -1;
-    }
-
-    public static String getCodeName() {
-        return get(CodeName);
-    }
-
-    public static String get(int type) {
-        for (String list : JarOperations.supported_devices.split("\n")) {
-            if (list.contains(selected)) {
-                switch (type) {
-                    case CodeName:
-                        String codeName = list.substring(list.indexOf("(") + 1, list.indexOf(")"));
-                        Logs.write("CodeName: " + codeName);
-                        return codeName;
-                }
-            }
-        }
-        return null;
-    }
 
     public static byte[] getBinary() throws IOException {
         if (Device.binary != null) {
             return Device.binary;
-        } else {
-            String codeName = Device.getCodeName();
-            for (String path : Jar.getBinaryList()) {
-                if (path.contains(codeName)) {
-                    return r.getBytesFromFile(JarOperations.getInputStream(path));
-                }
-            }
         }
         return null;
     }

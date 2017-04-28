@@ -5,10 +5,9 @@
  */
 package flashablezipcreator.Protocols;
 
-import flashablezipcreator.Core.GroupNode;
 import flashablezipcreator.Core.ProjectItemNode;
 import flashablezipcreator.Core.ProjectNode;
-import flashablezipcreator.MyTree;
+import flashablezipcreator.UserInterface.MyTree;
 import flashablezipcreator.Operations.XmlOperations;
 import static flashablezipcreator.Protocols.Export.to;
 import java.io.IOException;
@@ -39,7 +38,7 @@ public class Xml {
         xo = new XmlOperations();
         xo.createXML();
         for (ProjectItemNode project : to.getProjectsSorted(MyTree.rootNode)) {
-            if (((ProjectNode) project).projectType != ProjectNode.PROJECT_THEMES) {
+            if (((ProjectNode) project).prop.projectType != Types.PROJECT_THEMES) {
                 xo.addProjectNode((ProjectNode) project);
             }
         }
@@ -49,10 +48,7 @@ public class Xml {
     public static void parseXml(int type) throws ParserConfigurationException, SAXException, IOException {
         ProjectItemNode rootNode = MyTree.rootNode;
         switch (type) {
-            case GroupNode.GROUP_CUSTOM:
-                xo.parseGeneratedXML(rootNode, generatedData, originalData);//generatedData and OriginalData are modified in Import.java.
-                break;
-            case GroupNode.GROUP_DELETE_FILES:
+            case Types.GROUP_DELETE_FILES:
                 xo.parseXML(deleteData);
                 break;
             default:
@@ -77,28 +73,16 @@ public class Xml {
         xo.initializeProjectData(data);
     }
 
-    public static String getDeviceConfigString() throws ParserConfigurationException, TransformerException {
-        xo = new XmlOperations();
-        xo.createDeviceConfig(Device.selected);
-        return xo.getXML();
-    }
-
-    public static String getDeviceName(String configData) throws ParserConfigurationException, SAXException, IOException {
-        xo = new XmlOperations();
-        return xo.getStringConfigValue(configData, "Name");
-    }
-
-    public static String getPreferenceConfigString(String aromaVersion, boolean androidVersionAboveLP,
-            boolean quickProjectSetup, ArrayList<String> themes, String zipCreatorName, String ZipVersion, boolean saveLogs)
+    public static String getPreferenceConfigString(PreferenceProperties pp)
             throws ParserConfigurationException, TransformerException {
         xo = new XmlOperations();
-        xo.createConfigurationConfig(aromaVersion, androidVersionAboveLP, quickProjectSetup, themes, zipCreatorName, ZipVersion, saveLogs);
+        xo.createConfigurationConfig(pp);
         return xo.getXML();
     }
 
     public static String getAromaVersion(String configData) throws ParserConfigurationException, SAXException, IOException {
         xo = new XmlOperations();
-        return xo.getStringConfigValue(configData,"AromaVersion");
+        return xo.getStringConfigValue(configData, "AromaVersion");
     }
 
     public static boolean getAndroidVersionDetail(String configData) throws ParserConfigurationException, SAXException, IOException {
@@ -106,9 +90,9 @@ public class Xml {
         return xo.getBoolConfigValue(configData, "AboveLollipop");
     }
 
-    public static boolean getQuickProjectSetup(String configData) throws ParserConfigurationException, SAXException, IOException {
+    public static boolean getQuickSetup(String configData) throws ParserConfigurationException, SAXException, IOException {
         xo = new XmlOperations();
-        return xo.getBoolConfigValue(configData, "QuickProjectSetup");
+        return xo.getBoolConfigValue(configData, "IsQuickSetup");
     }
 
     public static ArrayList<String> getThemes(String configData) throws ParserConfigurationException, SAXException, IOException {
@@ -125,9 +109,14 @@ public class Xml {
         xo = new XmlOperations();
         return xo.getStringConfigValue(configData, "zipVersion");
     }
-    
+
     public static boolean getLogsIndicator(String configData) throws ParserConfigurationException, SAXException, IOException {
         xo = new XmlOperations();
         return xo.getBoolConfigValue(configData, "saveLogs");
+    }
+
+    public static boolean getCheckUpdatesIndicator(String configData) throws ParserConfigurationException, SAXException, IOException {
+        xo = new XmlOperations();
+        return xo.getBoolConfigValue(configData, "CheckUpdates");
     }
 }

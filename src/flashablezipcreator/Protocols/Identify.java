@@ -5,15 +5,10 @@
  */
 package flashablezipcreator.Protocols;
 
-import flashablezipcreator.Core.GroupNode;
-import flashablezipcreator.Core.ProjectNode;
 import flashablezipcreator.DiskOperations.ReadZip;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import javax.swing.JOptionPane;
 
 /**
  *
@@ -38,6 +33,8 @@ public class Identify {
     static String subGroupSeparator = "SubGroup_";
     static String folderSeparator = "Folder_";
     static String typeSeparator = "Type_";
+    static String locSeparator = "Loc_";
+    static String permSeparator = "Perm_";
 
     public static void init() {
         rom = false;
@@ -84,13 +81,13 @@ public class Identify {
 //    public static int check(String name) {
 //        if (isRom(name)) {
 //            rom = true;
-//            return ProjectNode.PROJECT_ROM;
+//            return Types.PROJECT_ROM;
 //        } else if (rom == false && isGapps(name)) {
 //            gapps = true;
-//            return ProjectNode.PROJECT_GAPPS;
+//            return Types.PROJECT_GAPPS;
 //        } else if (rom == false && gapps == false && isAroma(name)) {
 //            aroma = true;
-//            return ProjectNode.PROJECT_AROMA;
+//            return Types.PROJECT_AROMA;
 //        }
 //        return -1;
 //    }
@@ -135,13 +132,27 @@ public class Identify {
         return false;
     }
 
-    public static ArrayList<String> getFolderNames(String path) {
+    public static ArrayList<String> getFolderNames(String path, int projectType) {
         ArrayList<String> fList = new ArrayList<>();
-        while (path.contains(folderSeparator)) {
-            path = path.substring(path.indexOf(folderSeparator) + folderSeparator.length(), path.length());
-            String folderName = path.substring(0, path.indexOf("/"));
-            fList.add(folderName);
-            path = path.substring(path.indexOf("/") + 1, path.length());
+        switch (projectType) {
+            case Types.PROJECT_MOD:
+                if (!path.contains(folderSeparator)) {
+                    while (path.contains("/")) {
+                        String folderName = path.substring(0, path.indexOf("/"));
+                        fList.add(folderName);
+                        path = path.substring(path.indexOf("/") + 1, path.length());
+                    }
+                    return fList;
+                }
+            case Types.PROJECT_AROMA:
+            case Types.PROJECT_CUSTOM:
+                while (path.contains(folderSeparator)) {
+                    path = path.substring(path.indexOf(folderSeparator) + folderSeparator.length(), path.length());
+                    String folderName = path.substring(0, path.indexOf("/"));
+                    fList.add(folderName);
+                    path = path.substring(path.indexOf("/") + 1, path.length());
+                }
+                return fList;
         }
         return fList;
     }
@@ -167,38 +178,65 @@ public class Identify {
         return str.substring(0, str.indexOf("/"));
     }
 
+    public static String getPermissions(String customOriginalGroupType) {
+        String str = customOriginalGroupType.substring(customOriginalGroupType.indexOf(permSeparator) + permSeparator.length(),
+                 customOriginalGroupType.length());
+        return str;
+    }
+
+    public static String getLocation(String customOriginalGroupType) {
+        String str = customOriginalGroupType.substring(customOriginalGroupType.indexOf(locSeparator) + locSeparator.length(),
+                customOriginalGroupType.indexOf(permSeparator) - 1)
+                .replaceAll("\\+", "/");
+        return str;
+    }
+
+    public static String getOriginalGroupType(String path) {
+        String str = path.substring(path.indexOf(typeSeparator) + typeSeparator.length(), path.length());
+        str = str.substring(0, str.indexOf("/"));
+        return str;
+    }
+
     public static int getGroupType(String path) {
         String str = path.substring(path.indexOf(typeSeparator) + typeSeparator.length(), path.length());
         str = str.substring(0, str.indexOf("/"));
         switch (str) {
+            case "system":
+                return Types.GROUP_SYSTEM;
             case "system_app":
-                return GroupNode.GROUP_SYSTEM_APK;
+                return Types.GROUP_SYSTEM_APK;
             case "system_priv_app":
-                return GroupNode.GROUP_SYSTEM_PRIV_APK;
+                return Types.GROUP_SYSTEM_PRIV_APK;
+            case "system_bin":
+                return Types.GROUP_SYSTEM_BIN;
+            case "system_etc":
+                return Types.GROUP_SYSTEM_ETC;
+            case "system_framework":
+                return Types.GROUP_SYSTEM_FRAMEWORK;
             case "script":
-                return GroupNode.GROUP_SCRIPT;
+                return Types.GROUP_SCRIPT;
             case "system_media_alarms":
-                return GroupNode.GROUP_SYSTEM_MEDIA_AUDIO_ALARMS;
+                return Types.GROUP_SYSTEM_MEDIA_AUDIO_ALARMS;
             case "system_media_notifications":
-                return GroupNode.GROUP_SYSTEM_MEDIA_AUDIO_NOTIFICATIONS;
+                return Types.GROUP_SYSTEM_MEDIA_AUDIO_NOTIFICATIONS;
             case "system_media_ringtones":
-                return GroupNode.GROUP_SYSTEM_MEDIA_AUDIO_RINGTONES;
+                return Types.GROUP_SYSTEM_MEDIA_AUDIO_RINGTONES;
             case "system_media_ui":
-                return GroupNode.GROUP_SYSTEM_MEDIA_AUDIO_UI;
+                return Types.GROUP_SYSTEM_MEDIA_AUDIO_UI;
             case "data_app":
-                return GroupNode.GROUP_DATA_APP;
+                return Types.GROUP_DATA_APP;
             case "system_fonts":
-                return GroupNode.GROUP_SYSTEM_FONTS;
+                return Types.GROUP_SYSTEM_FONTS;
             case "system_media":
-                return GroupNode.GROUP_SYSTEM_MEDIA;
+                return Types.GROUP_SYSTEM_MEDIA;
             case "data_local":
-                return GroupNode.GROUP_DATA_LOCAL;
+                return Types.GROUP_DATA_LOCAL;
             case "custom":
-                return GroupNode.GROUP_CUSTOM;
-            case "Other":
-                return GroupNode.GROUP_OTHER;
+                return Types.GROUP_CUSTOM;
+            case "mod":
+                return Types.GROUP_MOD;
             default:
-                return GroupNode.GROUP_OTHER;
+                return Types.GROUP_CUSTOM;
         }
     }
 
@@ -212,6 +250,18 @@ public class Identify {
     }
 
     public static int getProjectType(String path) throws IOException {
-        return ProjectNode.PROJECT_AROMA;
+        if (path.startsWith("customize")) {
+            //path = path.substring(path.indexOf("/") + 1, path.indexOf("/", path.indexOf("/") + 1));
+            path = path.substring(path.indexOf("/") + 1, path.indexOf("_"));
+        }
+        switch (path) {
+            case "aroma":
+                return Types.PROJECT_AROMA;
+            case "custom":
+                return Types.PROJECT_CUSTOM;
+            case "mod":
+                return Types.PROJECT_MOD;
+        }
+        return Types.PROJECT_MOD;//This might get changed in future and set to Custom
     }
 }
