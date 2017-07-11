@@ -10,7 +10,7 @@ import flashablezipcreator.Protocols.Logs;
 import flashablezipcreator.Protocols.Project;
 import flashablezipcreator.Protocols.Types;
 import static flashablezipcreator.UserInterface.MyTree.rootNode;
-import flashablezipcreator.UserInterface.Preferences;
+import flashablezipcreator.UserInterface.Preference;
 import java.io.File;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
@@ -58,6 +58,7 @@ public final class NodeProperties {
     public String filePermission;
     public String fileZipPath;
     public String value;
+    public String deletePath;
     public int type;
     public int projectType;
     public int groupType;
@@ -89,7 +90,7 @@ public final class NodeProperties {
         groupParent = parent;
         if (!title.endsWith("-1") && parent.prop.groupType == Types.GROUP_DATA_APP) {
             this.title += "-1";
-            this.title = title;
+            title = this.title;
         }
         folderName = title;
         path = parent.prop.path + File.separator + title;
@@ -101,7 +102,7 @@ public final class NodeProperties {
         group = parent.prop.group;
         perm = parent.prop.perm;
         setPermissions = parent.prop.setPermissions;
-        defaultFolderPerm = (Preferences.pp.useUniversalBinary) ? "1000" + " " + "1000" + " " + "0755" + " "
+        defaultFolderPerm = (Preference.pp.useUniversalBinary) ? "1000" + " " + "1000" + " " + "0755" + " "
                 : "1000" + ", " + "1000" + ", " + "0755" + ", ";
         setPermissions();
         projectName = parent.prop.projectName;
@@ -124,7 +125,7 @@ public final class NodeProperties {
         group = parent.prop.group;
         perm = parent.prop.perm;
         setPermissions = parent.prop.setPermissions;
-        defaultFolderPerm = (Preferences.pp.useUniversalBinary) ? "1000" + " " + "1000" + " " + "0755" + " "
+        defaultFolderPerm = (Preference.pp.useUniversalBinary) ? "1000" + " " + "1000" + " " + "0755" + " "
                 : "1000" + ", " + "1000" + ", " + "0755" + ", ";
         setPermissions();
         projectName = parent.prop.projectName;
@@ -151,7 +152,7 @@ public final class NodeProperties {
                 break;
         }
 
-        androidVersion = Preferences.pp.IsFromLollipop ? "5.x+" : "4.x+";
+        androidVersion = "5.x+";
     }
 
     public NodeProperties(String title, int type, ProjectNode parent) {
@@ -436,7 +437,7 @@ public final class NodeProperties {
     public void reloadZipPath() {
         zipPath = parent.prop.zipPath + "/" + originalGroupType + "/" + groupZipPathPrefix + title;
     }
-    
+
     public void reloadZipPath(String newTitle) {
         zipPath = parent.prop.zipPath + "/" + originalGroupType + "/" + groupZipPathPrefix + newTitle;
     }
@@ -444,7 +445,7 @@ public final class NodeProperties {
     public void updateFileZipPath() {
         fileZipPath = parent.prop.zipPath + "/" + title;
     }
-    
+
     public void updateFileInstallLocation() {
         fileInstallLocation = parent.prop.location.replaceAll("\\\\", "/");
     }
@@ -452,7 +453,7 @@ public final class NodeProperties {
     public void setPermissions() {
         folderPermission = defaultFolderPerm + "\"" + folderLocation + "\"";
         folderPermission = folderPermission.replaceAll("\\\\", "/");
-        if (Preferences.pp.useUniversalBinary) {
+        if (Preference.pp.useUniversalBinary) {
             permission = owner + " " + group + " " + perm + " ";
         } else {
             permission = owner + ", " + group + ", " + perm + ", ";
@@ -467,7 +468,7 @@ public final class NodeProperties {
         owner = o;
         group = g;
         perm = p;
-        if (Preferences.pp.useUniversalBinary) {
+        if (Preference.pp.useUniversalBinary) {
             permission = owner + " " + group + " " + perm + " ";
         } else {
             permission = owner + ", " + group + ", " + perm + ", ";
@@ -478,7 +479,7 @@ public final class NodeProperties {
         owner = o;
         group = g;
         perm = p;
-        if (Preferences.pp.useUniversalBinary) {
+        if (Preference.pp.useUniversalBinary) {
             permission = owner + " " + group + " " + perm + " ";
         } else {
             permission = owner + ", " + group + ", " + perm + ", ";

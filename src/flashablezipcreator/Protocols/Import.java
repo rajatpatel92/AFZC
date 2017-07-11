@@ -5,14 +5,19 @@
  */
 package flashablezipcreator.Protocols;
 
+import flashablezipcreator.Core.DeleteNode;
 import flashablezipcreator.Core.FileNode;
+import flashablezipcreator.Core.GroupNode;
 import flashablezipcreator.Core.NodeProperties;
 import flashablezipcreator.Core.ProjectItemNode;
+import flashablezipcreator.Core.ProjectNode;
 import flashablezipcreator.DiskOperations.ReadZip;
 import flashablezipcreator.UserInterface.MyTree;
 import static flashablezipcreator.UserInterface.MyTree.progressBarFlag;
 import static flashablezipcreator.UserInterface.MyTree.progressBarImportExport;
 import flashablezipcreator.Operations.TreeOperations;
+import static flashablezipcreator.UserInterface.MyTree.circularProgressBar;
+import static flashablezipcreator.UserInterface.MyTree.txtProgress;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,72 +58,86 @@ public class Import implements Runnable {
     }
 
     public static void fromTheZip(String path) throws ParserConfigurationException, TransformerException, IOException, SAXException {
-        Logs.write("Trying to import from path: " + path);
-        progressValue = 0;
-        boolean containsDataXml = false;
-        Xml.initialize();
-        rz = new ReadZip(path);
-        to = new TreeOperations();
-        int maxSize = rz.filesCount;
-        fileIndex = 0;
-        Identify.fileName = (new File(path)).getName().replaceFirst("[.][^.]+$", "");
-        int modType = Mod.getModType(rz);
-        Logs.write("Reading Zip...");
         try {
-            for (Enumeration<? extends ZipEntry> e = rz.zf.entries(); e.hasMoreElements();) {
-                ZipEntry ze = e.nextElement();
-                String name = ze.getName();
-                Logs.write("Reading: " + name);
-                progressValue = (fileIndex * 100) / maxSize;
-                progressBarImportExport.setValue(progressValue);
-                setProgressBar("Importing " + (new File(name)).getName() + "");
-                if (name.endsWith("/") || Project.getTempFilesList().contains(name)
-                        || name.startsWith("META-INF")
-                        || name.contains("Extract_")) {
-                    Logs.write("Skipping " + name);
-                    continue;
+            Logs.write("Trying to import from path: " + path);
+            progressValue = 0;
+            boolean containsDataXml = false;
+            Xml.initialize();
+            rz = new ReadZip(path);
+            if (rz.zf != null) {
+                to = new TreeOperations();
+                int maxSize = rz.filesCount;
+                fileIndex = 0;
+                Identify.fileName = (new File(path)).getName().replaceFirst("[.][^.]+$", "");
+                int modType = Mod.getModType(rz);
+                Logs.write("Reading Zip...");
+                for (Enumeration<? extends ZipEntry> e = rz.zf.entries(); e.hasMoreElements();) {
+                    ZipEntry ze = e.nextElement();
+                    String name = ze.getName();
+                    Logs.write("Reading: " + name);
+                    progressValue = (fileIndex * 100) / maxSize;
+                    progressBarImportExport.setValue(progressValue);
+                    circularProgressBar.updateProgress(progressValue);
+                    setProgressBar("Importing " + (new File(name)).getName() + "");
+                    if (name.endsWith("/") || Project.getTempFilesList().contains(name)
+                            || name.startsWith("META-INF")
+                            || name.contains("Extract_")) {
+                        Logs.write("Skipping " + name);
+                        continue;
+                    }
+                    InputStream in = rz.zf.getInputStream(ze);
+                    if (name.equals(Xml.data_path)) {
+                        Xml.fileData = rz.getStringFromFile(in);
+                        containsDataXml = true;
+                        Logs.write("Skipping " + name);
+                        continue;
+                    }
+                    String filePath = name;
+                    String projectName = Identify.getProjectName(name);
+                    int projectType = Identify.getProjectType(filePath);
+                    if (name.endsWith("DeleteFilesPath")) {
+                        importDeleteNodes(filePath, projectName, in);
+                        continue;
+                    }
+                    switch (projectType) {
+                        case Types.PROJECT_AROMA:
+                            importAromaZip(filePath, projectName, in);
+                            break;
+                        case Types.PROJECT_MOD:
+                            importModZip(filePath, projectName, in, modType);
+                            break;
+                        case Types.PROJECT_CUSTOM:
+                            importCustomZip(filePath, projectName, in);
+                            break;
+                    }
                 }
-                InputStream in = rz.zf.getInputStream(ze);
-                if (name.equals(Xml.data_path)) {
-                    Xml.fileData = rz.getStringFromFile(in);
-                    containsDataXml = true;
-                    Logs.write("Skipping " + name);
-                    continue;
+
+                //adding nodes to tree should be done here.
+                Xml.terminate();
+
+                if (containsDataXml) {
+                    setProgressBar("Setting file details..");
+                    Logs.write("Parsing file_data.xml");
+                    Xml.parseXml(0); //this is to set additional details like description to nodes
+                    Logs.write("Xml Parsing Successful");
+                    setProgressBar("Setting file details done.");
+
                 }
-                String filePath = name;
-                String projectName = Identify.getProjectName(name);
-                int projectType = Identify.getProjectType(filePath);
-                switch (projectType) {
-                    case Types.PROJECT_AROMA:
-                        importAromaZip(filePath, projectName, in);
-                        break;
-                    case Types.PROJECT_MOD:
-                        importModZip(filePath, projectName, in, modType);
-                        break;
-                    case Types.PROJECT_CUSTOM:
-                        importCustomZip(filePath, projectName, in);
-                        break;
-                }
+                progressBarImportExport.setString("Successfully Imported");
+                txtProgress.setText("Successfully Imported");
+                circularProgressBar.updateProgress(100);
+                progressBarImportExport.setValue(100);
+                Logs.write("File Imported Successfully");
+                JOptionPane.showMessageDialog(null, "Successfully Imported");
+                txtProgress.setText("");
+                circularProgressBar.updateProgress(0);
+                progressBarImportExport.setString("0%");
+                progressBarImportExport.setValue(0);
+                progressBarFlag = 0;
+            } else {
+                JOptionPane.showMessageDialog(null, "Zip file seems to be corrupted!");
+                MyTree.setCardLayout(1);
             }
-
-            //adding nodes to tree should be done here.
-            Xml.terminate();
-
-            if (containsDataXml) {
-                setProgressBar("Setting file details..");
-                Logs.write("Parsing file_data.xml");
-                Xml.parseXml(0); //this is to set additional details like description to nodes
-                Logs.write("Xml Parsing Successful");
-                setProgressBar("Setting file details done.");
-
-            }
-            progressBarImportExport.setString("Successfully Imported");
-            progressBarImportExport.setValue(100);
-            Logs.write("File Imported Successfully");
-            JOptionPane.showMessageDialog(null, "Successfully Imported");
-            progressBarImportExport.setString("0%");
-            progressBarImportExport.setValue(0);
-            progressBarFlag = 0;
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Something Went Wrong!\nShare logs with developer!\n" + Logs.getExceptionTrace(e));
             Logs.write(Logs.getExceptionTrace(e));
@@ -191,7 +210,28 @@ public class Import implements Runnable {
         Logs.write("Written File: " + fName);
     }
 
+    public static void importDeleteNodes(String filePath, String projectName, InputStream in) throws IOException {
+        String groupName = Identify.getGroupName(filePath);
+        int groupType = Identify.getGroupType(filePath);
+        NodeProperties np = new NodeProperties(projectName, Types.PROJECT_AROMA, Mod.MOD_LESS, MyTree.rootNode);
+        ProjectNode pNode = (ProjectNode) MyTree.rootNode.addChild(new ProjectNode(np), false);
+        np = new NodeProperties(groupName, groupType, pNode);
+        GroupNode gNode = (GroupNode) pNode.addChild(new GroupNode(np), false);
+        for (String path : rz.getStringFromFile(in).split("\n")) {
+            gNode.addChild(new DeleteNode(path, gNode), true);
+        }
+    }
+
     public static void setProgressBar(String value) {
+        String str = value;
+        if (value.length() > 60) {
+            str = str.substring(0, value.length() / 3) + "..." + str.substring(value.length() - 10, value.length());
+        } else if (value.length() > 40) {
+            str = str.substring(0, value.length() / 2) + "..." + str.substring(value.length() - 10, value.length());
+        }
+        txtProgress.setText(str);
+        circularProgressBar.updateProgress(value);
+        circularProgressBar.updateProgress(progressValue);
         switch (MyTree.progressBarFlag) {
             case 0:
                 progressBarImportExport.setString(progressValue + "%");

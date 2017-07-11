@@ -16,7 +16,8 @@ import flashablezipcreator.Operations.MyFileFilter;
 import flashablezipcreator.Protocols.Mod;
 import flashablezipcreator.Protocols.Types;
 import flashablezipcreator.UserInterface.AddGroup;
-import flashablezipcreator.UserInterface.Preferences;
+import flashablezipcreator.UserInterface.Delete;
+import flashablezipcreator.UserInterface.Preference;
 import flashablezipcreator.UserInterface.MyTree;
 import static flashablezipcreator.UserInterface.MyTree.model;
 import static flashablezipcreator.UserInterface.MyTree.rootNode;
@@ -179,6 +180,10 @@ public class MyPopup {
                 JMenu addBootAnimationGroupMenu = new JMenu("Boot Animation Group");
                 addBootAnimationGroupMenu.add(mitemBootAnimSystem);
                 addBootAnimationGroupMenu.add(mitemBootAnimLocal);
+                JMenuItem mitemDeleteGroup = new JMenuItem("Delete Files Group");
+                mitemDeleteGroup.addActionListener((ActionEvent ae) -> {
+                    addQuickGroupObject(Types.GROUP_DELETE_FILES, node, "Delete Files Group");
+                });
                 JMenuItem mitemCustomGroup = new JMenuItem("Custom Group");
                 mitemCustomGroup.addActionListener((ActionEvent ae) -> {
                     addName(Types.GROUP_CUSTOM, node);
@@ -188,6 +193,7 @@ public class MyPopup {
                 addGroupMenu.add(addFontsGroupMenu);
                 addGroupMenu.add(addTonesGroupMenu);
                 addGroupMenu.add(addBootAnimationGroupMenu);
+                addGroupMenu.add(mitemDeleteGroup);
                 addGroupMenu.add(mitemCustomGroup);
                 popup.add(addGroupMenu);
             }
@@ -210,6 +216,9 @@ public class MyPopup {
             case Types.GROUP_SYSTEM_MEDIA:
                 mitemAddSubGroup = new JMenuItem("Add Boot Animations");
                 break;
+            case Types.GROUP_DELETE_FILES:
+                mitemAddSubGroup = new JMenuItem("Add Files/Folders to Delete");
+                break;
             default:
                 mitemAddSubGroup = new JMenuItem("Add SubGroup");
         }
@@ -224,6 +233,9 @@ public class MyPopup {
                             break;
                         case Types.GROUP_SYSTEM_MEDIA:
                             addQuickSubGroupObject(Types.GROUP_SYSTEM_MEDIA, node, "Boot Animation");
+                            break;
+                        case Types.GROUP_DELETE_FILES:
+                            Delete d = new Delete(node);
                             break;
                     }
                 }
@@ -275,6 +287,7 @@ public class MyPopup {
                 case Types.GROUP_SYSTEM_FONTS:
                 case Types.GROUP_DATA_LOCAL:
                 case Types.GROUP_SYSTEM_MEDIA:
+                case Types.GROUP_DELETE_FILES:
                     popup.add(mitemAddSubGroup);
                     break;
             }
@@ -360,28 +373,23 @@ public class MyPopup {
                 GroupNode gNode = (GroupNode) node;
                 for (File tempFile : MyFileFilter.getSelectedFiles(gNode.prop.extension)) {
                     FileNode fnode;
-                    if (Preferences.pp.IsFromLollipop) {
-                        switch (gNode.prop.groupType) {
-                            case Types.GROUP_SYSTEM_APK:
-                            case Types.GROUP_SYSTEM_PRIV_APK:
-                            case Types.GROUP_DATA_APP:
-                                String folderName = tempFile.getName().replaceFirst("[.][^.]+$", "");
-                                //it is okay to remove following condition as this is handled directly while creating folder node
-                                if (gNode.prop.groupType == Types.GROUP_DATA_APP) {
-                                    folderName = tempFile.getName().replaceFirst("[.][^.]+$", "") + "-1";
-                                }
-                                FolderNode folderNode = new FolderNode(folderName, gNode);
-                                fnode = new FileNode(tempFile.getAbsolutePath(), folderNode);
-                                folderNode.addChild(fnode, true);
-                                gNode.addChild(folderNode, false);
-                                break;
-                            default:
-                                fnode = new FileNode(tempFile.getAbsolutePath(), gNode);
-                                gNode.addChild(fnode, true);
-                        }
-                    } else {
-                        fnode = new FileNode(tempFile.getAbsolutePath(), gNode);
-                        gNode.addChild(fnode, true);
+                    switch (gNode.prop.groupType) {
+                        case Types.GROUP_SYSTEM_APK:
+                        case Types.GROUP_SYSTEM_PRIV_APK:
+                        case Types.GROUP_DATA_APP:
+                            String folderName = tempFile.getName().replaceFirst("[.][^.]+$", "");
+                            //it is okay to remove following condition as this is handled directly while creating folder node
+                            if (gNode.prop.groupType == Types.GROUP_DATA_APP) {
+                                folderName = tempFile.getName().replaceFirst("[.][^.]+$", "") + "-1";
+                            }
+                            FolderNode folderNode = new FolderNode(folderName, gNode);
+                            fnode = new FileNode(tempFile.getAbsolutePath(), folderNode);
+                            folderNode.addChild(fnode, true);
+                            gNode.addChild(folderNode, false);
+                            break;
+                        default:
+                            fnode = new FileNode(tempFile.getAbsolutePath(), gNode);
+                            gNode.addChild(fnode, true);
                     }
                 }
                 break;
@@ -438,7 +446,7 @@ public class MyPopup {
     }
 
     public static void addQuickGroupObject(int type, ProjectNode parent, String defaultName) {
-        if (!Preferences.pp.isQuickSetup) {
+        if (!Preference.pp.isQuickSetup && type != Types.GROUP_DELETE_FILES) {
             addName(type, parent);
         } else {
             if (parent.contains(defaultName)) {
@@ -467,7 +475,7 @@ public class MyPopup {
     }
 
     public static void addQuickSubGroupObject(int type, GroupNode parent, String defaultName) {
-        if (!Preferences.pp.isQuickSetup) {
+        if (!Preference.pp.isQuickSetup) {
             addName(type, parent);
         } else {
             if (parent.contains(defaultName)) {

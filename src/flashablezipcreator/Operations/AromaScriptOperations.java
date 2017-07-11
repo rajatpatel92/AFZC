@@ -5,13 +5,14 @@
  */
 package flashablezipcreator.Operations;
 
+import flashablezipcreator.Core.DeleteNode;
 import flashablezipcreator.Core.FileNode;
 import flashablezipcreator.Core.FolderNode;
 import flashablezipcreator.Core.GroupNode;
 import flashablezipcreator.Core.ProjectItemNode;
 import flashablezipcreator.Core.ProjectNode;
 import flashablezipcreator.Core.SubGroupNode;
-import flashablezipcreator.UserInterface.Preferences;
+import flashablezipcreator.UserInterface.Preference;
 import flashablezipcreator.Protocols.Project;
 import flashablezipcreator.Protocols.Types;
 
@@ -243,18 +244,18 @@ public class AromaScriptOperations {
                         + "\"Select files from the list\", \"\", 2,\n"
                         + "\"Select All\",\"Installs All Files.\", 1";
                 for (int i = 0; i < node.getChildCount(); i++) {
-                    if (Preferences.pp.IsFromLollipop) {
-                        switch (node.getChildAt(i).prop.type) {
-                            case Types.NODE_FOLDER:
-                                str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((FolderNode) node.getChildAt(i)).prop.description + "\", 0";
-                                break;
-                            case Types.NODE_FILE:
-                                str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((FileNode) node.getChildAt(i)).prop.description + "\", 0";
-                                break;
-                        }
-                    } else {
-                        str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((FileNode) node.getChildAt(i)).prop.description + "\", 0";
+//                    if (Preference.pp.IsFromLollipop) {
+                    switch (node.getChildAt(i).prop.type) {
+                        case Types.NODE_FOLDER:
+                            str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((FolderNode) node.getChildAt(i)).prop.description + "\", 0";
+                            break;
+                        case Types.NODE_FILE:
+                            str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((FileNode) node.getChildAt(i)).prop.description + "\", 0";
+                            break;
                     }
+//                    } else {
+//                        str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((FileNode) node.getChildAt(i)).prop.description + "\", 0";
+//                    }
                 }
                 str += ");\n";
                 str += "writetmpfile(\"" + node.prop.propFile + "\",readtmpfile(\"" + node.prop.propFile + "\"));\n";
@@ -263,12 +264,21 @@ public class AromaScriptOperations {
             case Types.GROUP_SYSTEM_MEDIA_AUDIO_NOTIFICATIONS:
             case Types.GROUP_SYSTEM_MEDIA_AUDIO_RINGTONES:
             case Types.GROUP_SYSTEM_MEDIA_AUDIO_UI:
-            case Types.GROUP_DELETE_FILES:
                 str += "\ncheckbox(\"" + node.prop.title + " List\",\"Select from " + node.prop.title + "\",\"@apps\",\"" + node.prop.propFile + "\",\n"
                         + "\"Select files from the list\", \"\", 2,\n"
                         + "\"Select All\",\"Installs All Files.\", 1";
                 for (int i = 0; i < node.getChildCount(); i++) {
                     str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((FileNode) node.getChildAt(i)).prop.description + "\", 0";
+                }
+                str += ");\n";
+                str += "writetmpfile(\"" + node.prop.propFile + "\",readtmpfile(\"" + node.prop.propFile + "\"));\n";
+                break;
+            case Types.GROUP_DELETE_FILES:
+                str += "\ncheckbox(\"" + node.prop.title + " List\",\"Select from " + node.prop.title + "\",\"@apps\",\"" + node.prop.propFile + "\",\n"
+                        + "\"Select files from the list\", \"\", 2,\n"
+                        + "\"Select All\",\"Delete All.\", 1";
+                for (int i = 0; i < node.getChildCount(); i++) {
+                    str += ",\n\"" + node.getChildAt(i).toString() + "\", \"" + ((DeleteNode) node.getChildAt(i)).prop.description + "\", 0";
                 }
                 str += ");\n";
                 str += "writetmpfile(\"" + node.prop.propFile + "\",readtmpfile(\"" + node.prop.propFile + "\"));\n";
@@ -283,22 +293,46 @@ public class AromaScriptOperations {
         return str;
     }
 
-    public String addCheckViewBox() {
-        String str = "\ncheckviewbox(\n"
-                + "\"Ready to Install\",\n"
-                + "    \"The wizard is ready to begin installation.\\n\\n\"+\n"
-                + "	\"Press <b>Next</b> to begin the installation.\\n\\n\"+\n"
-                + "	\"If you want to review or change any of your installation settings, press <b>Back</b>. Press Left Hard Button -> Quit Installation to exit the wizard.\\n\\n\\n\\n\\n\\n\\n\",\n"
-                + "    \"@alert\",\n"
-                + "\"<b>Clear Dalvik Cache</b> After Installation.\",\n"
-                + "\"0\",\n"
-                + "\"clear_it\");\n"
-                + "writetmpfile(\"dalvik_choices.prop\",\"init=no\\n\");\n"
-                + "if\n"
-                + "  getvar(\"clear_it\")==\"1\"\n"
-                + "then\n"
-                + "  writetmpfile(\"dalvik_choices.prop\",\"true=yes\");\n"
-                + "endif;\n";
+    public String addCheckViewBox(String type) {
+        String str = "";
+        switch (type) {
+            case "dalvik-cache":
+                str = "\ncheckviewbox(\n"
+                        + "\"Ready to Install\",\n"
+                        + "    \"The wizard is ready to begin installation.\\n\\n\"+\n"
+                        + "	\"Press <b>Next</b> to begin the installation.\\n\\n\"+\n"
+                        + "	\"If you want to review or change any of your installation settings, press <b>Back</b>. Press Left Hard Button -> Quit Installation to exit the wizard.\\n\\n\\n\\n\\n\\n\\n\",\n"
+                        + "    \"@alert\",\n"
+                        + "\"<b>Clear Dalvik Cache</b> After Installation.\",\n"
+                        + "\"0\",\n"
+                        + "\"clear_it\");\n"
+                        + "writetmpfile(\"dalvik_choices.prop\",\"init=no\\n\");\n"
+                        + "if\n"
+                        + "  getvar(\"clear_it\")==\"1\"\n"
+                        + "then\n"
+                        + "  writetmpfile(\"dalvik_choices.prop\",\"true=yes\");\n"
+                        + "endif;\n";
+                break;
+            case "addon.d":
+                str = "\ncheckviewbox(\n"
+                        + "\"Backup your choices!\",\n"
+                        + "    \"Check this to take backup of all the system files your have selected, "
+                        + "checking this will generate addon.d script to backup all your choices.\\n\\n\"+\n"
+                        + "	\"Press <b>Next</b> to Proceed ahead.\\n\\n\"+\n"
+                        + "	\"If you want to review or change any of your installation settings, press <b>Back</b>. Press Left Hard Button -> Quit Installation to exit the wizard.\\n\\n\\n\\n\\n\\n\\n\",\n"
+                        + "    \"@alert\",\n"
+                        + "\"<b>Generate Addon.d Script</b> After Installation.\",\n"
+                        + "\"" + (Preference.pp.enableAddonDSupport ? "1" : "0") + "\",\n"
+                        + "\"addond\");\n"
+                        + "writetmpfile(\"addond_choices.prop\",\"init=no\\n\");\n"
+                        + "if\n"
+                        + "  getvar(\"addond\")==\"1\"\n"
+                        + "then\n"
+                        + "  writetmpfile(\"addond_choices.prop\",\"true=yes\");\n"
+                        + "endif;\n";
+                break;
+        }
+
         return str;
     }
 

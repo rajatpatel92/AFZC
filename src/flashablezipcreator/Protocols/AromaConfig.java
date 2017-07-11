@@ -10,7 +10,7 @@ import flashablezipcreator.Core.ProjectItemNode;
 import flashablezipcreator.Core.ProjectNode;
 import flashablezipcreator.Operations.AromaScriptOperations;
 import flashablezipcreator.Operations.TreeOperations;
-import flashablezipcreator.UserInterface.Preferences;
+import flashablezipcreator.UserInterface.Preference;
 
 /**
  *
@@ -24,9 +24,10 @@ public class AromaConfig {
     public static String aromaConfigPath = "META-INF/com/google/android/aroma-config";
 
     public static String build(ProjectItemNode rootNode) {
+        Logs.write("Building Aroma.config");
         aromaConfig = "";
         to = new TreeOperations();
-        if (!Preferences.pp.aromaVersion.equals("Version 2.56 - EDELWEIS")) {
+        if (!Preference.pp.aromaVersion.equals("Version 2.56 - EDELWEIS")) {
             aromaConfig += "ini_set(\"force_colorspace\", \"rgba\");\n\n";
         }
         aromaConfig += op.addSplashString();
@@ -47,8 +48,11 @@ public class AromaConfig {
                 }
             }
         }
+        if (Preference.pp.displayAddonDSupport) {
+            aromaConfig += op.addCheckViewBox("addon.d");
+        }
         aromaConfig += op.setNextText("Install");
-        aromaConfig += op.addCheckViewBox();
+        aromaConfig += op.addCheckViewBox("dalvik-cache");
         aromaConfig += op.setNextText("Finish");
         aromaConfig += op.addInstallString();
 //        aromaConfig += op.setNextText("Finish");
